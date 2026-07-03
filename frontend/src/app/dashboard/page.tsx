@@ -9,7 +9,8 @@ import {
   Send,
   BookOpen,
   LineChart,
-  Play
+  Play,
+  X
 } from "lucide-react";
 
 import Sidebar from "@/components/dashboard/Sidebar";
@@ -23,6 +24,7 @@ import { API_BASE_URL } from "@/config";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("learning"); // learning, wiring, builder, simulation, code, hardware, rl
+  const [showMobileTutor, setShowMobileTutor] = useState(false);
   
   // --- Wiring Studio State ---
   const [placedComponents, setPlacedComponents] = useState<any[]>([]);
@@ -167,19 +169,36 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col font-sans">
       {/* Dashboard Top Header */}
-      <header className="glass-panel border-b border-cyan-950 px-6 py-4 flex items-center justify-between shrink-0 z-10">
-        <div className="flex items-center gap-4">
+      <header className="glass-panel border-b border-cyan-950 px-4 md:px-6 py-4 flex items-center justify-between shrink-0 z-10">
+        <div className="flex items-center gap-3 md:gap-4">
           <Link href="/" className="p-2 hover:bg-gray-900 rounded-lg text-gray-400 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-2">
             <div className="w-8 h-8 rounded bg-gradient-to-br from-cyan-400 to-violet-600 flex items-center justify-center">
               <Cpu className="w-5 h-5 text-black" />
             </div>
-            <h1 className="font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">
+            <h1 className="font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent text-sm md:text-base">
               ROBOVERSE LABS
             </h1>
           </div>
+          {/* Mobile Tab Select Dropdown */}
+          <select 
+            value={activeTab} 
+            onChange={(e) => {
+              setActiveTab(e.target.value);
+              setShowMobileTutor(false); // close tutor when switching tabs
+            }}
+            className="md:hidden bg-gray-900 border border-cyan-950 text-cyan-400 text-xs rounded px-2.5 py-1.5 focus:outline-none focus:border-cyan-500 font-mono font-bold w-40"
+          >
+            <option value="learning">Learning Hub</option>
+            <option value="wiring">Wiring Studio</option>
+            <option value="builder">Robot Builder</option>
+            <option value="simulation">Simulation Lab</option>
+            <option value="code">Programming Lab</option>
+            <option value="hardware">Hardware Generator</option>
+            <option value="rl">RL Lab</option>
+          </select>
         </div>
 
         {/* Global Stats indicators */}
@@ -196,19 +215,32 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <Link href="/testing" className="px-4 py-2 bg-gray-900 hover:bg-cyan-950/30 text-cyan-400 font-mono text-xs rounded border border-cyan-950 hover:border-cyan-500/50 transition-all">
-          /testing diagnostics
-        </Link>
+        <div className="flex items-center gap-2">
+          {/* AI Tutor Toggle Button for Mobile */}
+          <button
+            onClick={() => setShowMobileTutor(!showMobileTutor)}
+            className="lg:hidden p-2 bg-gray-900 hover:bg-cyan-950/30 text-cyan-400 rounded border border-cyan-950 hover:border-cyan-500/50 transition-all flex items-center justify-center gap-1.5"
+          >
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+            <span className="text-xs font-mono">Tutor</span>
+          </button>
+
+          <Link href="/testing" className="hidden sm:block px-4 py-2 bg-gray-900 hover:bg-cyan-950/30 text-cyan-400 font-mono text-xs rounded border border-cyan-950 hover:border-cyan-500/50 transition-all">
+            /testing diagnostics
+          </Link>
+        </div>
       </header>
 
       {/* Main Workspace Frame */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         
-        {/* Navigation Sidebar */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} telemetry={telemetry} />
+        {/* Navigation Sidebar (Desktop/Tablet only) */}
+        <div className="hidden md:flex shrink-0">
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} telemetry={telemetry} />
+        </div>
 
         {/* Dynamic Center Work Area */}
-        <main className="flex-1 bg-gray-950 p-6 overflow-y-auto flex flex-col">
+        <main className="flex-1 bg-gray-950 p-4 md:p-6 overflow-y-auto flex flex-col">
           
           {/* TAB 1: LEARNING HUB REDIRECT */}
           {activeTab === "learning" && (
@@ -299,11 +331,25 @@ export default function DashboardPage() {
           {activeTab === "rl" && <RLWorkspace />}
         </main>
 
-        {/* AI Tutor Chat panel (Fixed Right Sidebar) */}
-        <aside className="w-80 bg-gray-900/60 border-l border-cyan-950/60 flex flex-col shrink-0 z-10">
-          <div className="p-4 border-b border-cyan-950/80 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-cyan-400 animate-pulse" />
-            <h3 className="font-bold text-white text-sm">AI Robotics Tutor</h3>
+        {/* AI Tutor Chat panel (Fixed Right Sidebar / Mobile Drawer) */}
+        <aside className={`
+          ${showMobileTutor 
+            ? "fixed inset-y-0 right-0 w-80 max-w-[90vw] bg-gray-950 border-l border-cyan-500/30 shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-250" 
+            : "hidden lg:flex w-80 bg-gray-900/60 border-l border-cyan-950/60 flex flex-col shrink-0 z-10"
+          }
+        `}>
+          <div className="p-4 border-b border-cyan-950/80 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-cyan-400 animate-pulse" />
+              <h3 className="font-bold text-white text-sm">AI Robotics Tutor</h3>
+            </div>
+            {/* Close Button for Mobile Drawer */}
+            <button 
+              onClick={() => setShowMobileTutor(false)}
+              className="lg:hidden p-1.5 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
